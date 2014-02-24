@@ -34,11 +34,13 @@ using namespace std;
 typedef enum
 {
 	int_result,
-	void_result
+	void_result,
+	float_result
 } Result_Enum;
 
 class Eval_Result;
 class Local_Environment;
+
 
 class Eval_Result 
 {
@@ -105,6 +107,26 @@ public:
 
 	void set_value(int value);
 	int get_value();
+
+	void set_variable_status(bool def);
+	bool is_variable_defined();
+
+	void set_result_enum(Result_Enum res);
+	Result_Enum get_result_enum();
+};
+
+class Eval_Result_Value_Float:public Eval_Result_Value
+{
+	float value;
+	bool defined;
+public:
+	Eval_Result_Value_Int();
+	~Eval_Result_Value_Int();
+
+	void set_value(float number);
+	float get_value();
+
+	bool is_bb_defined();
 
 	void set_variable_status(bool def);
 	bool is_variable_defined();

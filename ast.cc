@@ -700,7 +700,10 @@ Eval_Result & Arith_Ast::evaluate(Local_Environment & eval_env, ostream & file_b
 	if(result_rhs.is_variable_defined()==false)
 		report_error("Variable should be defined to be on rhs", NOLINE);
 
-	Eval_Result & result = *new Eval_Result_Value(); //Should account for float also
+	if(node_data_type==int_data_type)
+		Eval_Result & result = *new Eval_Result_Value_Int(); //Should account for float also
+	else
+		Eval_Result & result = *new Eval_Result_Value_Float();
 
 	if(op==ADD)
 	{
@@ -758,19 +761,19 @@ void Unary_Ast::print_ast(ostream & file_buffer)
 	file_buffer<<AST_NODE_SPACE<<"Arith: ";
 	if(op==ADD)
 	{
-		file_buffer<<"PLUS\n";
+		file_buffer<<"UPLUS\n";
 	}
 	else if(op==SUB)
 	{
-		file_buffer<<"MINUS\n";
+		file_buffer<<"UMINUS\n";
 	}
 	else if(op==MUL)
 	{
-		file_buffer<<"MULT\n";
+		file_buffer<<"UMULT\n";
 	}
 	else
 	{
-		file_buffer<<"DIV\n";
+		file_buffer<<"UDIV\n";
 	}
 	file_buffer<<AST_NODE_NODE_SPACE<<"LHS (";
 	if(operand->get_type()!="REL" && operand->get_type()!="ARITH")
@@ -790,6 +793,28 @@ Eval_Result & Unary_Ast::evaluate(Local_Environment & eval_env, ostream & file_b
 	Eval_Result & result_operand = operand->evaluate(eval_env, file_buffer);
 	if(result_operand.is_variable_defined()==false)
 		report_error("Variable should be defined to be as an operand", NOLINE);
+	if(node_data_type==int_data_type)
+		Eval_Result & result = *new Eval_Result_Value_Int();
+	else
+		Eval_Result & result = *new Eval_Result_Value_Float();
 
-	Eval_Result & result = *new Eval_Result_Value();
+	if(op==ADD)
+	{
+		result.set_value(result_operand.get_value());		
+	}
+	else if(op==SUB)
+	{
+		result.set_value(-1*result_operand.get_value());
+	}
+	else if(op==MUL)
+	{
+		result.set_value(result_operand.get_value());
+	}
+	else
+	{
+		result.set_value(result_operand.get_value());
+	}
+
+	print_ast(file_buffer);
+	return result;
 }
