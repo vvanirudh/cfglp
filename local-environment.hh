@@ -35,7 +35,8 @@ typedef enum
 {
 	int_result,
 	void_result,
-	float_result
+	float_result,
+	return_result
 } Result_Enum;
 
 class Eval_Result;
@@ -50,6 +51,9 @@ protected:
 public:
 	virtual int get_value();
 	virtual void set_value(int value);
+	virtual void set_value(float value);
+
+	virtual float get_float_value();
 
 	virtual bool is_variable_defined();
 	virtual void set_variable_status(bool def);
@@ -64,7 +68,9 @@ class Eval_Result_Value:public Eval_Result
 {
 public:
 	virtual void set_value(int number) = 0;
+	virtual void set_value(float value) = 0;
 	virtual int get_value() = 0;
+	virtual float get_float_value() = 0;
 
 	virtual bool is_bb_defined() = 0;
 
@@ -83,8 +89,10 @@ public:
 	Eval_Result_Value_Int();
 	~Eval_Result_Value_Int();
 
+	void set_value(float value);
 	void set_value(int number);
 	int get_value();
+	float get_float_value();
 
 	bool is_bb_defined();
 
@@ -106,7 +114,9 @@ public:
 	bool is_bb_defined();
 
 	void set_value(int value);
+	void set_value(float value);
 	int get_value();
+	float get_float_value();
 
 	void set_variable_status(bool def);
 	bool is_variable_defined();
@@ -120,11 +130,13 @@ class Eval_Result_Value_Float:public Eval_Result_Value
 	float value;
 	bool defined;
 public:
-	Eval_Result_Value_Int();
-	~Eval_Result_Value_Int();
+	Eval_Result_Value_Float();
+	~Eval_Result_Value_Float();
 
+	void set_value(int number);
 	void set_value(float number);
-	float get_value();
+	int get_value();
+	float get_float_value();
 
 	bool is_bb_defined();
 

@@ -116,7 +116,7 @@ void Assignment_Ast::print_ast(ostream & file_buffer)
 
 	file_buffer << AST_NODE_SPACE"LHS (";
 
-	if(lhs->get_type()!="REL")
+	if(lhs->get_type()!="REL" && lhs->get_type()!="ARITH")
 		lhs->print_ast(file_buffer);
 	else
 	{
@@ -126,7 +126,7 @@ void Assignment_Ast::print_ast(ostream & file_buffer)
 	file_buffer << ")\n";
 
 	file_buffer << AST_NODE_SPACE << "RHS (";
-	if(rhs->get_type()!="REL")
+	if(rhs->get_type()!="REL" && rhs->get_type()!="ARITH")
 		rhs->print_ast(file_buffer);
 	else
 	{
@@ -143,6 +143,7 @@ Eval_Result & Assignment_Ast::evaluate(Local_Environment & eval_env, ostream & f
 	if (result.is_variable_defined() == false)
 		report_error("Variable should be defined to be on rhs", NOLINE);
 
+	// file_buffer<<result.get_float_value()<<"\n";
 	lhs->set_value_of_evaluation(eval_env, result);
 
 	// Print the result
@@ -160,6 +161,7 @@ Name_Ast::Name_Ast(string & name, Symbol_Table_Entry & var_entry)
 	variable_name = name;
 	variable_symbol_entry = var_entry;
 	type = "N";
+	node_data_type = variable_symbol_entry.get_data_type();
 }
 
 Name_Ast::~Name_Ast()
@@ -194,6 +196,11 @@ void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 	{
 		if (loc_var_val->get_result_enum() == int_result)
 			file_buffer << loc_var_val->get_value() << "\n";
+		else if(loc_var_val->get_result_enum() == float_result)
+		{
+			// file_buffer << loc_var_val->get_float_value() << "\n";
+			printf("%.2f\n", loc_var_val->get_float_value());
+		}
 		else
 			report_internal_error("Result type can only be int and float");
 	}
@@ -206,6 +213,15 @@ void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
 				file_buffer << "0\n";
 			else
 				file_buffer << glob_var_val->get_value() << "\n";
+		}
+		else if(glob_var_val->get_result_enum() == float_result)
+		{
+			if (glob_var_val == NULL)
+				// file_buffer << "0\n";
+				printf("0.00\n");
+			else
+				// file_buffer << glob_var_val->get_float_value() << "\n";
+				printf("%.2f\n", glob_var_val->get_float_value());
 		}
 		else
 			report_internal_error("Result type can only be int and float");
@@ -233,7 +249,11 @@ void Name_Ast::set_value_of_evaluation(Local_Environment & eval_env, Eval_Result
 		i = new Eval_Result_Value_Int();
 	 	i->set_value(result.get_value());
 	}
-
+	else if(result.get_result_enum() == float_result)
+	{
+		i = new Eval_Result_Value_Float();
+	 	i->set_value(result.get_float_value());
+	}
 	if (eval_env.does_variable_exist(variable_name))
 		eval_env.put_variable_value(*i, variable_name);
 	else
@@ -274,7 +294,13 @@ string Number_Ast<DATA_TYPE>::get_type()
 template <class DATA_TYPE>
 void Number_Ast<DATA_TYPE>::print_ast(ostream & file_buffer)
 {
-	file_buffer << "Num : " << constant;
+	if(node_data_type==int_data_type)
+		file_buffer << "Num : " << constant;
+	else
+	{
+		file_buffer <<"Num : ";
+		printf("%.2f", (float)constant);
+	}
 }
 
 template <class DATA_TYPE>
@@ -283,6 +309,13 @@ Eval_Result & Number_Ast<DATA_TYPE>::evaluate(Local_Environment & eval_env, ostr
 	if (node_data_type == int_data_type)
 	{
 		Eval_Result & result = *new Eval_Result_Value_Int();
+		result.set_value(constant);
+
+		return result;
+	}
+	else
+	{
+		Eval_Result & result = *new Eval_Result_Value_Float();
 		result.set_value(constant);
 
 		return result;
@@ -313,10 +346,12 @@ Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_
 {
 	Eval_Result & result = *new Eval_Result_Value_Int();
 	print_ast(file_buffer);
+	result.set_result_enum(return_result);
 	return result;
 }
 
 template class Number_Ast<int>;
+template class Number_Ast<float>;
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -406,7 +441,7 @@ void Relational_Expr_Ast::print_ast(ostream & file_buffer)
 		file_buffer<<"wrong\n";
 
 	file_buffer <<AST_NODE_NODE_SPACE"LHS (";
-	if(lhs->get_type()!="REL")
+	if(lhs->get_type()!="REL" && lhs->get_type()!="ARITH")
 		lhs->print_ast(file_buffer);
 	else
 	{
@@ -416,7 +451,7 @@ void Relational_Expr_Ast::print_ast(ostream & file_buffer)
 	file_buffer << ")\n";
 
 	file_buffer <<AST_NODE_NODE_SPACE << "RHS (";
-	if(rhs->get_type()!="REL") rhs->print_ast(file_buffer);
+	if(rhs->get_type()!="REL" && rhs->get_type()!="ARITH") rhs->print_ast(file_buffer);
 	else
 	{
 		file_buffer<<"\n";
@@ -438,44 +473,57 @@ Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostrea
 
 	Eval_Result & result = *new Eval_Result_Value_Int();
 
+	float lhs_value;
+	float rhs_value;
+
+	if(result_lhs.get_result_enum()==int_result)
+		lhs_value = result_lhs.get_value();
+	else
+		lhs_value = result_lhs.get_float_value();
+
+	if(result_rhs.get_result_enum()==float_result)
+		rhs_value = result_rhs.get_float_value();
+	else
+		rhs_value = result_rhs.get_value();
+
 	if(op==LE)
 	{
-		if(result_lhs.get_value()<=result_rhs.get_value())
+		if(lhs_value<=rhs_value)
 			result.set_value(1);
 		else
 			result.set_value(0);
 	}
 	else if(op==LT)
 	{
-		if(result_lhs.get_value()<result_rhs.get_value())
+		if(lhs_value<rhs_value)
 			result.set_value(1);
 		else
 			result.set_value(0);
 	}
 	else if(op==GE)
 	{
-		if(result_lhs.get_value()>=result_rhs.get_value())
+		if(lhs_value>=rhs_value)
 			result.set_value(1);
 		else
 			result.set_value(0);
 	}
 	else if(op==GT)
 	{
-		if(result_lhs.get_value()>result_rhs.get_value())
+		if(lhs_value>rhs_value)
 			result.set_value(1);
 		else
 			result.set_value(0);
 	}
 	else if(op==NE)
 	{
-		if(result_lhs.get_value()!=result_rhs.get_value())
+		if(lhs_value!=rhs_value)
 			result.set_value(1);
 		else
 			result.set_value(0);
 	}
 	else
 	{
-		if(result_lhs.get_value()==result_rhs.get_value())
+		if(lhs_value==rhs_value)
 			result.set_value(1);
 		else
 			result.set_value(0);
@@ -700,31 +748,63 @@ Eval_Result & Arith_Ast::evaluate(Local_Environment & eval_env, ostream & file_b
 	if(result_rhs.is_variable_defined()==false)
 		report_error("Variable should be defined to be on rhs", NOLINE);
 
-	if(node_data_type==int_data_type)
+	if(node_data_type==int_data_type){
 		Eval_Result & result = *new Eval_Result_Value_Int(); //Should account for float also
-	else
+		if(op==ADD)
+		{
+			result.set_value(result_lhs.get_value() + result_rhs.get_value());		
+		}
+		else if(op==SUB)
+		{
+			result.set_value(result_lhs.get_value() - result_rhs.get_value());
+		}
+		else if(op==MUL)
+		{
+			result.set_value(result_lhs.get_value() * result_rhs.get_value());
+		}
+		else
+		{
+			result.set_value(result_lhs.get_value() / result_rhs.get_value());
+		}
+		// print_ast(file_buffer);
+		return result;
+	}
+	else{
 		Eval_Result & result = *new Eval_Result_Value_Float();
+		float lhs_value;
+		float rhs_value;
 
-	if(op==ADD)
-	{
-		result.set_value(result_lhs.get_value() + result_rhs.get_value());		
-	}
-	else if(op==SUB)
-	{
-		result.set_value(result_lhs.get_value() - result_rhs.get_value());
-	}
-	else if(op==MUL)
-	{
-		result.set_value(result_lhs.get_value() * result_rhs.get_value());
-	}
-	else
-	{
-		result.set_value(result_lhs.get_value() / result_rhs.get_value());
-	}
+		if(result_lhs.get_result_enum()==int_result)
+			lhs_value = result_lhs.get_value();
+		else
+			lhs_value = result_lhs.get_float_value();
 
-	print_ast(file_buffer);
+		if(result_rhs.get_result_enum()==int_result)
+			rhs_value = result_rhs.get_value();
+		else
+			rhs_value = result_rhs.get_float_value();
 
-	return result;
+		if(op==ADD)
+		{
+			result.set_value(lhs_value + rhs_value);		
+		}
+		else if(op==SUB)
+		{
+			result.set_value(lhs_value - rhs_value);
+		}
+		else if(op==MUL)
+		{
+			result.set_value(lhs_value * rhs_value);
+		}
+		else
+		{
+			result.set_value(lhs_value / rhs_value);
+		}
+
+		// print_ast(file_buffer);
+
+		return result;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -793,28 +873,17 @@ Eval_Result & Unary_Ast::evaluate(Local_Environment & eval_env, ostream & file_b
 	Eval_Result & result_operand = operand->evaluate(eval_env, file_buffer);
 	if(result_operand.is_variable_defined()==false)
 		report_error("Variable should be defined to be as an operand", NOLINE);
-	if(node_data_type==int_data_type)
+	
+	if(node_data_type==int_data_type){
 		Eval_Result & result = *new Eval_Result_Value_Int();
-	else
-		Eval_Result & result = *new Eval_Result_Value_Float();
-
-	if(op==ADD)
-	{
-		result.set_value(result_operand.get_value());		
-	}
-	else if(op==SUB)
-	{
 		result.set_value(-1*result_operand.get_value());
+		// print_ast(file_buffer);
+		return result;
 	}
-	else if(op==MUL)
-	{
-		result.set_value(result_operand.get_value());
+	else{
+		Eval_Result & result = *new Eval_Result_Value_Float();
+		result.set_value(-1*result_operand.get_float_value());
+		// print_ast(file_buffer);
+		return result;
 	}
-	else
-	{
-		result.set_value(result_operand.get_value());
-	}
-
-	print_ast(file_buffer);
-	return result;
 }

@@ -142,8 +142,12 @@ Eval_Result & Procedure::evaluate(ostream & file_buffer)
 					current_bb = *i;
 			}
 		}
-		else
-			current_bb = get_next_bb(*current_bb);		
+		else{
+			if(result->get_result_enum()!=return_result)
+				current_bb = get_next_bb(*current_bb);
+			else
+				break;
+		}		
 	}
 
 	file_buffer << "\n\n";

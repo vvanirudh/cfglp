@@ -65,6 +65,10 @@
 %type <ast> comparision_expression
 %type <ast> goto_expression
 %type <ast> if_expression
+%type <ast> arith_expression
+%type <ast> term_expression
+%type <ast> factor
+%type <ast> cast_factor
 
 %start program
 
@@ -489,60 +493,64 @@ comparision_expression:
 	arith_expression
 	{
 		
-		$$ = NULL;
+		$$ = $1;
 		
 	}
 ;
 
 arith_expression:
-	arith_expression '*' term_expression
+	arith_expression '+' term_expression
 	{
 		
-		
-		
+		$$ = new Arith_Ast($1,$3, ADD);
+		int line = get_line_number();
+		$$->check_ast(line);
 	}
 |
-	arith_expression '/' term_expression
+	arith_expression '-' term_expression
 	{
 		
-		
+		$$ = new Arith_Ast($1,$3, SUB);
+		int line = get_line_number();
+		$$->check_ast(line);
 		
 	}
 |
 	term_expression
 	{
 		
-		
+		$$ = $1;
 		
 	}
 ;
 
 term_expression:
-	term_expression '+' factor
+	term_expression '*' factor
 	{
 		
-	
+		$$ = new Arith_Ast($1,$3, MUL);
+		int line = get_line_number();
+		$$->check_ast(line);
 		
 	}
 |
-	term_expression '-' factor
+	term_expression '/' factor
 	{
-		
-		
-		
+		$$ = new Arith_Ast($1,$3, DIV);
+		int line = get_line_number();
+		$$->check_ast(line);
 	}
 |
 	factor
 	{
 		
-		
+		$$ = $1;
 		
 	}
 |
 	cast_factor
 	{
-		
-		
+		$$ = $1;
 	}
 ;
 
@@ -550,7 +558,7 @@ factor:
 	variable
 	{
 		
-		
+		$$ = $1;
 		
 		
 	}
@@ -558,7 +566,7 @@ factor:
 	constant
 	{
 		
-		
+		$$ = $1;
 		
 		
 	}
@@ -566,59 +574,67 @@ factor:
 	'-' variable
 	{
 		
-
-		
+		$$ = new Unary_Ast($2,SUB);
+		int line = get_line_number();
+		$$->check_ast(line);
 	}
 |
 	'-' constant
 	{
 		
-
+		$$ = new Unary_Ast($2,SUB);
+		int line = get_line_number();
+		$$->check_ast(line);
 		
 	}
 |
 	'(' comparision_expression ')'
 	{
+		$$ = $2;
 
 	}
 |
 	'-' '(' comparision_expression ')'
 	{
-		
+		$$ = new Unary_Ast($3,SUB);
+		int line = get_line_number();
+		$$->check_ast(line);
 	}
 ;
 
 cast_factor:
 	'(' FLOAT ')' variable
 	{
-		
-		
+		$$ = NULL;
 	}
 |
 	'(' INTEGER ')' variable
 	{
-		
-		
+		$$ = NULL;
 	}
 |
 	'(' DOUBLE ')' variable
 	{
 		
+		$$ = NULL;
 		
 	}
 |
 	'(' INTEGER ')' '(' arith_expression ')'
 	{
+		$$ = NULL;
 
 	}
 |
 	'(' FLOAT ')' '(' arith_expression ')'
 	{
+		$$ = NULL;
 
 	}
 |
 	'(' DOUBLE ')' '(' arith_expression ')'
 	{
+		$$ = NULL;
 
 	}
 ;
