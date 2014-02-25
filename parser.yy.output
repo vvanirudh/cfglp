@@ -40,21 +40,23 @@ Production Rules
 37: arith_expression ->  term_expression
 38: term_expression ('*') ->  term_expression '*' factor
 39: term_expression ('/') ->  term_expression '/' factor
-40: term_expression ->  factor
-41: term_expression ->  cast_factor
-42: factor ->  variable
-43: factor ->  constant
-44: factor ('-') ->  '-' variable
-45: factor ('-') ->  '-' constant
-46: factor ('(') ->  '(' comparision_expression ')'
-47: factor ('-') ->  '-' '(' comparision_expression ')'
-48: cast_factor ('(') ->  '(' FLOAT ')' variable
-49: cast_factor ('(') ->  '(' INTEGER ')' variable
-50: cast_factor ('(') ->  '(' DOUBLE ')' variable
-51: cast_factor ('(') ->  '(' INTEGER ')' '(' arith_expression ')'
-52: cast_factor ('(') ->  '(' FLOAT ')' '(' arith_expression ')'
-53: cast_factor ('(') ->  '(' DOUBLE ')' '(' arith_expression ')'
-54: program_$ ->  program
+40: term_expression ('*') ->  term_expression '*' cast_factor
+41: term_expression ('/') ->  term_expression '/' cast_factor
+42: term_expression ->  factor
+43: term_expression ->  cast_factor
+44: factor ->  variable
+45: factor ->  constant
+46: factor ('-') ->  '-' variable
+47: factor ('-') ->  '-' constant
+48: factor ('(') ->  '(' comparision_expression ')'
+49: factor ('-') ->  '-' '(' comparision_expression ')'
+50: cast_factor ('(') ->  '(' FLOAT ')' variable
+51: cast_factor ('(') ->  '(' INTEGER ')' variable
+52: cast_factor ('(') ->  '(' DOUBLE ')' variable
+53: cast_factor ('(') ->  '(' INTEGER ')' '(' arith_expression ')'
+54: cast_factor ('(') ->  '(' FLOAT ')' '(' arith_expression ')'
+55: cast_factor ('(') ->  '(' DOUBLE ')' '(' arith_expression ')'
+56: program_$ ->  program
 
 
 Symbolic Terminal tokens:
@@ -92,7 +94,7 @@ Symbolic Terminal tokens:
 
 Grammar States: 
 State 0:
-54: program_$ ->  . program 
+56: program_$ ->  . program 
   0:   On program to state 1
   1:   On declaration_statement_list to state 2
   2:   On procedure_name to state 3
@@ -103,7 +105,7 @@ State 0:
 
 
 State 1:
-54: program_$ -> program  . 
+56: program_$ -> program  . 
 
 
 State 2:
@@ -416,35 +418,37 @@ State 47:
 37: arith_expression -> term_expression  . 
 38: term_expression -> term_expression  . '*' factor 
 39: term_expression -> term_expression  . '/' factor 
+40: term_expression -> term_expression  . '*' cast_factor 
+41: term_expression -> term_expression  . '/' cast_factor 
   0:   On '*' to state 67
   1:   On '/' to state 68
   Reduce by 37: arith_expression -> term_expression  . 
 
 
 State 48:
-40: term_expression -> factor  . 
-  Reduce by 40: term_expression -> factor  . 
+42: term_expression -> factor  . 
+  Reduce by 42: term_expression -> factor  . 
 
 
 State 49:
-41: term_expression -> cast_factor  . 
-  Reduce by 41: term_expression -> cast_factor  . 
+43: term_expression -> cast_factor  . 
+  Reduce by 43: term_expression -> cast_factor  . 
 
 
 State 50:
-42: factor -> variable  . 
-  Reduce by 42: factor -> variable  . 
+44: factor -> variable  . 
+  Reduce by 44: factor -> variable  . 
 
 
 State 51:
-43: factor -> constant  . 
-  Reduce by 43: factor -> constant  . 
+45: factor -> constant  . 
+  Reduce by 45: factor -> constant  . 
 
 
 State 52:
-44: factor -> '-'  . variable 
-45: factor -> '-'  . constant 
-47: factor -> '-'  . '(' comparision_expression ')' 
+46: factor -> '-'  . variable 
+47: factor -> '-'  . constant 
+49: factor -> '-'  . '(' comparision_expression ')' 
   0:   On variable to state 69
   1:   On constant to state 70
   2:   On '(' to state 71
@@ -454,13 +458,13 @@ State 52:
 
 
 State 53:
-46: factor -> '('  . comparision_expression ')' 
-48: cast_factor -> '('  . FLOAT ')' variable 
-49: cast_factor -> '('  . INTEGER ')' variable 
-50: cast_factor -> '('  . DOUBLE ')' variable 
-51: cast_factor -> '('  . INTEGER ')' '(' arith_expression ')' 
-52: cast_factor -> '('  . FLOAT ')' '(' arith_expression ')' 
-53: cast_factor -> '('  . DOUBLE ')' '(' arith_expression ')' 
+48: factor -> '('  . comparision_expression ')' 
+50: cast_factor -> '('  . FLOAT ')' variable 
+51: cast_factor -> '('  . INTEGER ')' variable 
+52: cast_factor -> '('  . DOUBLE ')' variable 
+53: cast_factor -> '('  . INTEGER ')' '(' arith_expression ')' 
+54: cast_factor -> '('  . FLOAT ')' '(' arith_expression ')' 
+55: cast_factor -> '('  . DOUBLE ')' '(' arith_expression ')' 
   0:   On comparision_expression to state 72
   1:   On FLOAT to state 73
   2:   On INTEGER to state 74
@@ -641,41 +645,45 @@ State 66:
 
 State 67:
 38: term_expression -> term_expression '*'  . factor 
+40: term_expression -> term_expression '*'  . cast_factor 
   0:   On factor to state 86
-  1:   On variable to state 50
-  2:   On constant to state 51
-  3:   On '-' to state 52
-  4:   On '(' to state 87
-  5:   On NAME to state 40
-  6:   On INTEGER_NUMBER to state 54
-  7:   On FLOAT_NUMBER to state 55
+  1:   On cast_factor to state 87
+  2:   On variable to state 50
+  3:   On constant to state 51
+  4:   On '-' to state 52
+  5:   On '(' to state 53
+  6:   On NAME to state 40
+  7:   On INTEGER_NUMBER to state 54
+  8:   On FLOAT_NUMBER to state 55
 
 
 State 68:
 39: term_expression -> term_expression '/'  . factor 
+41: term_expression -> term_expression '/'  . cast_factor 
   0:   On factor to state 88
-  1:   On variable to state 50
-  2:   On constant to state 51
-  3:   On '-' to state 52
-  4:   On '(' to state 87
-  5:   On NAME to state 40
-  6:   On INTEGER_NUMBER to state 54
-  7:   On FLOAT_NUMBER to state 55
+  1:   On cast_factor to state 89
+  2:   On variable to state 50
+  3:   On constant to state 51
+  4:   On '-' to state 52
+  5:   On '(' to state 53
+  6:   On NAME to state 40
+  7:   On INTEGER_NUMBER to state 54
+  8:   On FLOAT_NUMBER to state 55
 
 
 State 69:
-44: factor -> '-' variable  . 
-  Reduce by 44: factor -> '-' variable  . 
+46: factor -> '-' variable  . 
+  Reduce by 46: factor -> '-' variable  . 
 
 
 State 70:
-45: factor -> '-' constant  . 
-  Reduce by 45: factor -> '-' constant  . 
+47: factor -> '-' constant  . 
+  Reduce by 47: factor -> '-' constant  . 
 
 
 State 71:
-47: factor -> '-' '('  . comparision_expression ')' 
-  0:   On comparision_expression to state 89
+49: factor -> '-' '('  . comparision_expression ')' 
+  0:   On comparision_expression to state 90
   1:   On arith_expression to state 46
   2:   On term_expression to state 47
   3:   On factor to state 48
@@ -690,14 +698,14 @@ State 71:
 
 
 State 72:
-46: factor -> '(' comparision_expression  . ')' 
+48: factor -> '(' comparision_expression  . ')' 
 28: comparision_expression -> comparision_expression  . LEP comparision_expression 
 29: comparision_expression -> comparision_expression  . LTP comparision_expression 
 30: comparision_expression -> comparision_expression  . GEP comparision_expression 
 31: comparision_expression -> comparision_expression  . GTP comparision_expression 
 32: comparision_expression -> comparision_expression  . NEP comparision_expression 
 33: comparision_expression -> comparision_expression  . EQP comparision_expression 
-  0:   On ')' to state 90
+  0:   On ')' to state 91
   1:   On LEP to state 59
   2:   On LTP to state 60
   3:   On GEP to state 61
@@ -707,21 +715,21 @@ State 72:
 
 
 State 73:
-48: cast_factor -> '(' FLOAT  . ')' variable 
-52: cast_factor -> '(' FLOAT  . ')' '(' arith_expression ')' 
-  0:   On ')' to state 91
-
-
-State 74:
-49: cast_factor -> '(' INTEGER  . ')' variable 
-51: cast_factor -> '(' INTEGER  . ')' '(' arith_expression ')' 
+50: cast_factor -> '(' FLOAT  . ')' variable 
+54: cast_factor -> '(' FLOAT  . ')' '(' arith_expression ')' 
   0:   On ')' to state 92
 
 
-State 75:
-50: cast_factor -> '(' DOUBLE  . ')' variable 
-53: cast_factor -> '(' DOUBLE  . ')' '(' arith_expression ')' 
+State 74:
+51: cast_factor -> '(' INTEGER  . ')' variable 
+53: cast_factor -> '(' INTEGER  . ')' '(' arith_expression ')' 
   0:   On ')' to state 93
+
+
+State 75:
+52: cast_factor -> '(' DOUBLE  . ')' variable 
+55: cast_factor -> '(' DOUBLE  . ')' '(' arith_expression ')' 
+  0:   On ')' to state 94
 
 
 State 76:
@@ -731,7 +739,7 @@ State 76:
 
 State 77:
 27: if_expression -> IF '(' comparision_expression ')' GOTO  . BB ';' ELSE GOTO BB ';' 
-  0:   On BB to state 94
+  0:   On BB to state 95
 
 
 State 78:
@@ -840,6 +848,8 @@ State 84:
 35: arith_expression -> arith_expression '+' term_expression  . 
 38: term_expression -> term_expression  . '*' factor 
 39: term_expression -> term_expression  . '/' factor 
+40: term_expression -> term_expression  . '*' cast_factor 
+41: term_expression -> term_expression  . '/' cast_factor 
   0:   On '*' to state 67
   1:   On '/' to state 68
   Reduce by 35: arith_expression -> arith_expression '+' term_expression  . 
@@ -849,6 +859,8 @@ State 85:
 36: arith_expression -> arith_expression '-' term_expression  . 
 38: term_expression -> term_expression  . '*' factor 
 39: term_expression -> term_expression  . '/' factor 
+40: term_expression -> term_expression  . '*' cast_factor 
+41: term_expression -> term_expression  . '/' cast_factor 
   0:   On '*' to state 67
   1:   On '/' to state 68
   Reduce by 36: arith_expression -> arith_expression '-' term_expression  . 
@@ -860,19 +872,8 @@ State 86:
 
 
 State 87:
-46: factor -> '('  . comparision_expression ')' 
-  0:   On comparision_expression to state 72
-  1:   On arith_expression to state 46
-  2:   On term_expression to state 47
-  3:   On factor to state 48
-  4:   On cast_factor to state 49
-  5:   On variable to state 50
-  6:   On constant to state 51
-  7:   On '-' to state 52
-  8:   On '(' to state 53
-  9:   On NAME to state 40
-  10:   On INTEGER_NUMBER to state 54
-  11:   On FLOAT_NUMBER to state 55
+40: term_expression -> term_expression '*' cast_factor  . 
+  Reduce by 40: term_expression -> term_expression '*' cast_factor  . 
 
 
 State 88:
@@ -881,14 +882,19 @@ State 88:
 
 
 State 89:
-47: factor -> '-' '(' comparision_expression  . ')' 
+41: term_expression -> term_expression '/' cast_factor  . 
+  Reduce by 41: term_expression -> term_expression '/' cast_factor  . 
+
+
+State 90:
+49: factor -> '-' '(' comparision_expression  . ')' 
 28: comparision_expression -> comparision_expression  . LEP comparision_expression 
 29: comparision_expression -> comparision_expression  . LTP comparision_expression 
 30: comparision_expression -> comparision_expression  . GEP comparision_expression 
 31: comparision_expression -> comparision_expression  . GTP comparision_expression 
 32: comparision_expression -> comparision_expression  . NEP comparision_expression 
 33: comparision_expression -> comparision_expression  . EQP comparision_expression 
-  0:   On ')' to state 95
+  0:   On ')' to state 96
   1:   On LEP to state 59
   2:   On LTP to state 60
   3:   On GEP to state 61
@@ -897,72 +903,52 @@ State 89:
   6:   On EQP to state 64
 
 
-State 90:
-46: factor -> '(' comparision_expression ')'  . 
-  Reduce by 46: factor -> '(' comparision_expression ')'  . 
-
-
 State 91:
-48: cast_factor -> '(' FLOAT ')'  . variable 
-52: cast_factor -> '(' FLOAT ')'  . '(' arith_expression ')' 
-  0:   On variable to state 96
-  1:   On '(' to state 97
-  2:   On NAME to state 40
+48: factor -> '(' comparision_expression ')'  . 
+  Reduce by 48: factor -> '(' comparision_expression ')'  . 
 
 
 State 92:
-49: cast_factor -> '(' INTEGER ')'  . variable 
-51: cast_factor -> '(' INTEGER ')'  . '(' arith_expression ')' 
-  0:   On variable to state 98
-  1:   On '(' to state 99
+50: cast_factor -> '(' FLOAT ')'  . variable 
+54: cast_factor -> '(' FLOAT ')'  . '(' arith_expression ')' 
+  0:   On variable to state 97
+  1:   On '(' to state 98
   2:   On NAME to state 40
 
 
 State 93:
-50: cast_factor -> '(' DOUBLE ')'  . variable 
-53: cast_factor -> '(' DOUBLE ')'  . '(' arith_expression ')' 
-  0:   On variable to state 100
-  1:   On '(' to state 101
+51: cast_factor -> '(' INTEGER ')'  . variable 
+53: cast_factor -> '(' INTEGER ')'  . '(' arith_expression ')' 
+  0:   On variable to state 99
+  1:   On '(' to state 100
   2:   On NAME to state 40
 
 
 State 94:
-27: if_expression -> IF '(' comparision_expression ')' GOTO BB  . ';' ELSE GOTO BB ';' 
-  0:   On ';' to state 102
+52: cast_factor -> '(' DOUBLE ')'  . variable 
+55: cast_factor -> '(' DOUBLE ')'  . '(' arith_expression ')' 
+  0:   On variable to state 101
+  1:   On '(' to state 102
+  2:   On NAME to state 40
 
 
 State 95:
-47: factor -> '-' '(' comparision_expression ')'  . 
-  Reduce by 47: factor -> '-' '(' comparision_expression ')'  . 
+27: if_expression -> IF '(' comparision_expression ')' GOTO BB  . ';' ELSE GOTO BB ';' 
+  0:   On ';' to state 103
 
 
 State 96:
-48: cast_factor -> '(' FLOAT ')' variable  . 
-  Reduce by 48: cast_factor -> '(' FLOAT ')' variable  . 
+49: factor -> '-' '(' comparision_expression ')'  . 
+  Reduce by 49: factor -> '-' '(' comparision_expression ')'  . 
 
 
 State 97:
-52: cast_factor -> '(' FLOAT ')' '('  . arith_expression ')' 
-  0:   On arith_expression to state 103
-  1:   On term_expression to state 47
-  2:   On factor to state 48
-  3:   On cast_factor to state 49
-  4:   On variable to state 50
-  5:   On constant to state 51
-  6:   On '-' to state 52
-  7:   On '(' to state 53
-  8:   On NAME to state 40
-  9:   On INTEGER_NUMBER to state 54
-  10:   On FLOAT_NUMBER to state 55
+50: cast_factor -> '(' FLOAT ')' variable  . 
+  Reduce by 50: cast_factor -> '(' FLOAT ')' variable  . 
 
 
 State 98:
-49: cast_factor -> '(' INTEGER ')' variable  . 
-  Reduce by 49: cast_factor -> '(' INTEGER ')' variable  . 
-
-
-State 99:
-51: cast_factor -> '(' INTEGER ')' '('  . arith_expression ')' 
+54: cast_factor -> '(' FLOAT ')' '('  . arith_expression ')' 
   0:   On arith_expression to state 104
   1:   On term_expression to state 47
   2:   On factor to state 48
@@ -976,13 +962,13 @@ State 99:
   10:   On FLOAT_NUMBER to state 55
 
 
+State 99:
+51: cast_factor -> '(' INTEGER ')' variable  . 
+  Reduce by 51: cast_factor -> '(' INTEGER ')' variable  . 
+
+
 State 100:
-50: cast_factor -> '(' DOUBLE ')' variable  . 
-  Reduce by 50: cast_factor -> '(' DOUBLE ')' variable  . 
-
-
-State 101:
-53: cast_factor -> '(' DOUBLE ')' '('  . arith_expression ')' 
+53: cast_factor -> '(' INTEGER ')' '('  . arith_expression ')' 
   0:   On arith_expression to state 105
   1:   On term_expression to state 47
   2:   On factor to state 48
@@ -996,22 +982,33 @@ State 101:
   10:   On FLOAT_NUMBER to state 55
 
 
+State 101:
+52: cast_factor -> '(' DOUBLE ')' variable  . 
+  Reduce by 52: cast_factor -> '(' DOUBLE ')' variable  . 
+
+
 State 102:
-27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';'  . ELSE GOTO BB ';' 
-  0:   On ELSE to state 106
+55: cast_factor -> '(' DOUBLE ')' '('  . arith_expression ')' 
+  0:   On arith_expression to state 106
+  1:   On term_expression to state 47
+  2:   On factor to state 48
+  3:   On cast_factor to state 49
+  4:   On variable to state 50
+  5:   On constant to state 51
+  6:   On '-' to state 52
+  7:   On '(' to state 53
+  8:   On NAME to state 40
+  9:   On INTEGER_NUMBER to state 54
+  10:   On FLOAT_NUMBER to state 55
 
 
 State 103:
-52: cast_factor -> '(' FLOAT ')' '(' arith_expression  . ')' 
-35: arith_expression -> arith_expression  . '+' term_expression 
-36: arith_expression -> arith_expression  . '-' term_expression 
-  0:   On ')' to state 107
-  1:   On '+' to state 65
-  2:   On '-' to state 66
+27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';'  . ELSE GOTO BB ';' 
+  0:   On ELSE to state 107
 
 
 State 104:
-51: cast_factor -> '(' INTEGER ')' '(' arith_expression  . ')' 
+54: cast_factor -> '(' FLOAT ')' '(' arith_expression  . ')' 
 35: arith_expression -> arith_expression  . '+' term_expression 
 36: arith_expression -> arith_expression  . '-' term_expression 
   0:   On ')' to state 108
@@ -1020,7 +1017,7 @@ State 104:
 
 
 State 105:
-53: cast_factor -> '(' DOUBLE ')' '(' arith_expression  . ')' 
+53: cast_factor -> '(' INTEGER ')' '(' arith_expression  . ')' 
 35: arith_expression -> arith_expression  . '+' term_expression 
 36: arith_expression -> arith_expression  . '-' term_expression 
   0:   On ')' to state 109
@@ -1029,36 +1026,45 @@ State 105:
 
 
 State 106:
-27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE  . GOTO BB ';' 
-  0:   On GOTO to state 110
+55: cast_factor -> '(' DOUBLE ')' '(' arith_expression  . ')' 
+35: arith_expression -> arith_expression  . '+' term_expression 
+36: arith_expression -> arith_expression  . '-' term_expression 
+  0:   On ')' to state 110
+  1:   On '+' to state 65
+  2:   On '-' to state 66
 
 
 State 107:
-52: cast_factor -> '(' FLOAT ')' '(' arith_expression ')'  . 
-  Reduce by 52: cast_factor -> '(' FLOAT ')' '(' arith_expression ')'  . 
+27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE  . GOTO BB ';' 
+  0:   On GOTO to state 111
 
 
 State 108:
-51: cast_factor -> '(' INTEGER ')' '(' arith_expression ')'  . 
-  Reduce by 51: cast_factor -> '(' INTEGER ')' '(' arith_expression ')'  . 
+54: cast_factor -> '(' FLOAT ')' '(' arith_expression ')'  . 
+  Reduce by 54: cast_factor -> '(' FLOAT ')' '(' arith_expression ')'  . 
 
 
 State 109:
-53: cast_factor -> '(' DOUBLE ')' '(' arith_expression ')'  . 
-  Reduce by 53: cast_factor -> '(' DOUBLE ')' '(' arith_expression ')'  . 
+53: cast_factor -> '(' INTEGER ')' '(' arith_expression ')'  . 
+  Reduce by 53: cast_factor -> '(' INTEGER ')' '(' arith_expression ')'  . 
 
 
 State 110:
-27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE GOTO  . BB ';' 
-  0:   On BB to state 111
+55: cast_factor -> '(' DOUBLE ')' '(' arith_expression ')'  . 
+  Reduce by 55: cast_factor -> '(' DOUBLE ')' '(' arith_expression ')'  . 
 
 
 State 111:
-27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE GOTO BB  . ';' 
-  0:   On ';' to state 112
+27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE GOTO  . BB ';' 
+  0:   On BB to state 112
 
 
 State 112:
+27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE GOTO BB  . ';' 
+  0:   On ';' to state 113
+
+
+State 113:
 27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE GOTO BB ';'  . 
   Reduce by 27: if_expression -> IF '(' comparision_expression ')' GOTO BB ';' ELSE GOTO BB ';'  . 
 

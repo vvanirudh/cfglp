@@ -6,3 +6,5 @@ We have submitted the 64-bit version.
 1.	We have added new token specifications to recognise float numbers and arithmetic expressions.
 	We have added tokens to recognise the arithmetic operators and the assignment operator as a separate token.
 	We have added new grammar rules to support arithmetic expressions, unary minus and casting.
+
+2. 	We have added the evaluation stages for float support and arithmetic expressions. 

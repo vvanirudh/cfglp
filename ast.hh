@@ -221,4 +221,20 @@ public:
 	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
 };
 
+class Cast_Ast : public Ast
+{
+	Ast * operand;
+	Data_Type datatype;
+public:
+	Cast_Ast(Ast * oper, Data_Type arg_type);
+	~Cast_Ast();
+
+	Data_Type get_data_type();
+	void print_ast(ostream & file_buffer);
+	bool check_ast(int line);
+
+	string get_type();
+	Eval_Result & evaluate(Local_Environment & eval_env, ostream & file_buffer);
+};
+
 #endif

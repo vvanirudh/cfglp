@@ -887,3 +887,68 @@ Eval_Result & Unary_Ast::evaluate(Local_Environment & eval_env, ostream & file_b
 		return result;
 	}
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+Cast_Ast::Cast_Ast(Ast * oper, Data_Type arg_type)
+{
+	operand = oper;
+	datatype = arg_type;
+	type = "CAST";
+}
+
+Cast_Ast::~Cast_Ast()
+{
+	delete operand;
+}
+
+Data_Type Cast_Ast::get_data_type()
+{
+	return datatype;
+}
+
+void Cast_Ast::print_ast(ostream & file_buffer)
+{
+	if(operand->get_type()!="REL" && operand->get_type()!="ARITH")
+		operand->print_ast(file_buffer);
+	else
+	{
+		file_buffer<<"\n";
+		operand->print_ast(file_buffer);
+	}
+}
+
+bool Cast_Ast::check_ast(int line)
+{
+
+}
+
+string Cast_Ast::get_type()
+{
+	return type;
+}
+
+Eval_Result & Cast_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result_operand = operand->evaluate(eval_env, file_buffer);
+
+	if(datatype==int_data_type)
+	{
+		Eval_Result & result = *new Eval_Result_Value_Int();
+		if(result_operand.get_result_enum()==int_result)
+			result.set_value((int)result_operand.get_value());
+		else
+			result.set_value((int)result_operand.get_float_value());
+		return result;
+	}
+	else
+	{
+		Eval_Result & result = *new Eval_Result_Value_Float();
+		if(result_operand.get_result_enum()==int_result)
+			result.set_value((float)result_operand.get_value());
+		else
+			result.set_value((float)result_operand.get_float_value());
+		return result;
+	}
+}

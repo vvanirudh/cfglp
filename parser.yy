@@ -541,6 +541,22 @@ term_expression:
 		$$->check_ast(line);
 	}
 |
+	term_expression '*' cast_factor
+	{
+		
+		$$ = new Arith_Ast($1,$3, MUL);
+		int line = get_line_number();
+		$$->check_ast(line);
+		
+	}
+|
+	term_expression '/' cast_factor
+	{
+		$$ = new Arith_Ast($1,$3, DIV);
+		int line = get_line_number();
+		$$->check_ast(line);
+	}
+|
 	factor
 	{
 		
@@ -605,36 +621,48 @@ factor:
 cast_factor:
 	'(' FLOAT ')' variable
 	{
-		$$ = NULL;
+		$$ = new Cast_Ast($4, float_data_type);
+		int line = get_line_number();
+		$$->check_ast(line);
 	}
 |
 	'(' INTEGER ')' variable
 	{
-		$$ = NULL;
+		$$ = new Cast_Ast($4, int_data_type);
+		int line = get_line_number();
+		$$->check_ast(line);
 	}
 |
 	'(' DOUBLE ')' variable
 	{
 		
-		$$ = NULL;
+		$$ = new Cast_Ast($4, float_data_type);
+		int line = get_line_number();
+		$$->check_ast(line);
 		
 	}
 |
 	'(' INTEGER ')' '(' arith_expression ')'
 	{
-		$$ = NULL;
+		$$ = new Cast_Ast($5, int_data_type);
+		int line = get_line_number();
+		$$->check_ast(line);
 
 	}
 |
 	'(' FLOAT ')' '(' arith_expression ')'
 	{
-		$$ = NULL;
+		$$ = new Cast_Ast($5, float_data_type);
+		int line = get_line_number();
+		$$->check_ast(line);
 
 	}
 |
 	'(' DOUBLE ')' '(' arith_expression ')'
 	{
-		$$ = NULL;
+		$$ = new Cast_Ast($5, float_data_type);
+		int line = get_line_number();
+		$$->check_ast(line);
 
 	}
 ;
