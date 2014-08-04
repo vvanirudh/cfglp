@@ -1,0 +1,33 @@
+variable ASSIGN variable ';'
+	{
+	if (NOT_ONLY_PARSE)
+	{
+		CHECK_INVARIANT((($1 != NULL) && ($3 != NULL)), "lhs/rhs cannot be null");
+
+		Ast * lhs = $1;
+		Ast * rhs = $3;
+
+		Ast * assign = new Assignment_Ast(lhs, rhs, get_line_number());
+
+		assign->check_ast();
+
+		$$ = assign;
+	}
+	}
+|
+	variable ASSIGN constant ';'
+	{
+	if (NOT_ONLY_PARSE)
+	{
+		CHECK_INVARIANT((($1 != NULL) && ($3 != NULL)), "lhs/rhs cannot be null");
+
+		Ast * lhs = $1;
+		Ast * rhs = $3;
+
+		Ast * assign = new Assignment_Ast(lhs, rhs, get_line_number());
+
+		assign->check_ast();
+
+		$$ = assign;
+	}
+	}

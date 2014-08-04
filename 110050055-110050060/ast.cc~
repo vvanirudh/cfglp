@@ -1,0 +1,1118 @@
+
+/*********************************************************************************************
+
+                                cfglp : A CFG Language Processor
+                                --------------------------------
+
+           About:
+
+           Implemented   by  Tanu  Kanvar (tanu@cse.iitb.ac.in) and Uday
+           Khedker    (http://www.cse.iitb.ac.in/~uday)  for the courses
+           cs302+cs306: Language  Processors  (theory and  lab)  at  IIT
+           Bombay.
+
+           Release  date  Jan  15, 2013.  Copyrights  reserved  by  Uday
+           Khedker. This  implemenation  has been made  available purely
+           for academic purposes without any warranty of any kind.
+
+           Documentation (functionality, manual, and design) and related
+           tools are  available at http://www.cse.iitb.ac.in/~uday/cfglp
+
+
+***********************************************************************************************/
+
+#include<iostream>
+#include<fstream>
+#include<typeinfo>
+
+using namespace std;
+
+#include"common-classes.hh"
+#include"error-display.hh"
+#include"user-options.hh"
+#include"local-environment.hh"
+#include"icode.hh"
+#include"reg-alloc.hh"
+#include"symbol-table.hh"
+#include"ast.hh"
+#include"basic-block.hh"
+#include"procedure.hh"
+#include"program.hh"
+
+/*********************************************/
+bool check(Ast * ast)
+{
+	if(typeid(*ast)==typeid(Number_Ast<int>))
+		return true;
+	if(typeid(*ast)==typeid(Name_Ast))
+		return true;
+	return false;
+}
+
+bool check2(Ast * ast)
+{
+	if(typeid(*ast) == typeid(Name_Ast))
+		return true;
+	else
+		return false;
+}
+/********************************************/
+
+
+Ast::Ast()
+{}
+
+Ast::~Ast()
+{}
+
+bool Ast::check_ast()
+{
+	stringstream msg;
+	msg << "No check_ast() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+Data_Type Ast::get_data_type()
+{
+	stringstream msg;
+	msg << "No get_data_type() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+Symbol_Table_Entry & Ast::get_symbol_entry()
+{
+	stringstream msg;
+	msg << "No get_symbol_entry() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+void Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
+{
+	stringstream msg;
+	msg << "No print_value() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+Eval_Result & Ast::get_value_of_evaluation(Local_Environment & eval_env)
+{
+	stringstream msg;
+	msg << "No get_value_of_evaluation() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+void Ast::set_value_of_evaluation(Local_Environment & eval_env, Eval_Result & result)
+{
+	stringstream msg;
+	msg << "No set_value_of_evaluation() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+Code_For_Ast & Ast::create_store_stmt(Register_Descriptor * store_register)
+{
+	stringstream msg;
+	msg << "No create_store_stmt() function for " << typeid(*this).name();
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, msg.str());
+}
+
+////////////////////////////////////////////////////////////////
+
+Assignment_Ast::Assignment_Ast(Ast * temp_lhs, Ast * temp_rhs, int line)
+{
+	lhs = temp_lhs;
+	rhs = temp_rhs;
+
+	ast_num_child = binary_arity;
+	node_data_type = void_data_type;
+
+	lineno = line;
+	type="A";
+}
+
+Assignment_Ast::~Assignment_Ast()
+{
+	delete lhs;
+	delete rhs;
+}
+string Assignment_Ast::get_type()
+{
+	return type;
+}
+
+bool Assignment_Ast::check_ast()
+{
+	CHECK_INVARIANT((rhs != NULL), "Rhs of Assignment_Ast cannot be null");
+	CHECK_INVARIANT((lhs != NULL), "Lhs of Assignment_Ast cannot be null");
+
+	if (lhs->get_data_type() == rhs->get_data_type())
+	{
+		node_data_type = lhs->get_data_type();
+		return true;
+	}
+
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
+		"Assignment statement data type not compatible");
+}
+
+void Assignment_Ast::print(ostream & file_buffer)
+{
+	file_buffer << "\n" << AST_SPACE << "Asgn:";
+
+	file_buffer << "\n" << AST_NODE_SPACE << "LHS (";
+	lhs->print(file_buffer);
+	file_buffer << ")";
+
+	file_buffer << "\n" << AST_NODE_SPACE << "RHS (";
+	rhs->print(file_buffer);
+	file_buffer << ")";
+}
+
+Eval_Result & Assignment_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	CHECK_INVARIANT((rhs != NULL), "Rhs of Assignment_Ast cannot be null");
+	Eval_Result & result = rhs->evaluate(eval_env, file_buffer);
+
+	CHECK_INPUT_AND_ABORT(result.is_variable_defined(), "Variable should be defined to be on rhs of Assignment_Ast", lineno);
+
+	CHECK_INVARIANT((lhs != NULL), "Lhs of Assignment_Ast cannot be null");
+
+	lhs->set_value_of_evaluation(eval_env, result);
+
+	// Print the result
+
+	print(file_buffer);
+
+	lhs->print_value(eval_env, file_buffer);
+
+	return result;
+}
+
+Code_For_Ast & Assignment_Ast::compile()
+{
+	/* 
+		An assignment x = y where y is a variable is 
+		compiled as a combination of load and store statements:
+		(load) R <- y 
+		(store) x <- R
+		If y is a constant, the statement is compiled as:
+		(imm_Load) R <- y 
+		(store) x <- R
+		where imm_Load denotes the load immediate operation.
+	*/
+
+	CHECK_INVARIANT((lhs != NULL), "Lhs cannot be null");
+	CHECK_INVARIANT((rhs != NULL), "Rhs cannot be null");
+
+	Code_For_Ast & load_stmt = rhs->compile();
+
+	Register_Descriptor * load_register = load_stmt.get_reg();
+
+	Code_For_Ast store_stmt = lhs->create_store_stmt(load_register);
+
+	load_register->clear_lra_symbol_list();
+	// Store the statement in ic_list
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (load_stmt.get_icode_list().empty() == false)
+		ic_list = load_stmt.get_icode_list();
+
+	if (store_stmt.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), store_stmt.get_icode_list());
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, load_register);
+
+	return *assign_stmt;
+}
+
+Code_For_Ast & Assignment_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	CHECK_INVARIANT((lhs != NULL), "Lhs cannot be null");
+	CHECK_INVARIANT((rhs != NULL), "Rhs cannot be null");
+
+	if(check(lhs) && check(rhs)){
+		lra.optimize_lra(mc_2m, lhs, rhs);
+	}
+
+	// Register_Descriptor * register_lhs = (lhs->get_symbol_entry()).get_register();
+	// if(register_lhs!=NULL)
+	// 	register_lhs->clear_lra_symbol_list();
+
+	Code_For_Ast load_stmt = rhs->compile_and_optimize_ast(lra);
+
+	Register_Descriptor * result_register = load_stmt.get_reg();
+
+	Code_For_Ast store_stmt = lhs->create_store_stmt(result_register);
+
+	// result_register->clear_lra_symbol_list(); // MY ADDITION
+
+	// if(typeid())
+	(lhs->get_symbol_entry()).update_register(result_register);
+
+	list<Icode_Stmt *> ic_list;
+
+	if (load_stmt.get_icode_list().empty() == false)
+		ic_list = load_stmt.get_icode_list();
+
+	if (store_stmt.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), store_stmt.get_icode_list());
+
+	Code_For_Ast * assign_stmt;
+	if (ic_list.empty() == false)
+		assign_stmt = new Code_For_Ast(ic_list, result_register);
+
+	return *assign_stmt;
+}
+
+
+
+/////////////////////////////////////////////////////////////////
+
+Name_Ast::Name_Ast(string & name, Symbol_Table_Entry & var_entry, int line)
+{
+	variable_symbol_entry = &var_entry;
+
+	CHECK_INVARIANT((variable_symbol_entry->get_variable_name() == name),
+		"Variable's symbol entry is not matching its name");
+
+	ast_num_child = zero_arity;
+	node_data_type = variable_symbol_entry->get_data_type();
+	lineno = line;
+	type = "N";
+}
+
+Name_Ast::~Name_Ast()
+{}
+
+string Name_Ast::get_type()
+{
+	return type;
+}
+
+Data_Type Name_Ast::get_data_type()
+{
+	return variable_symbol_entry->get_data_type();
+}
+
+Symbol_Table_Entry & Name_Ast::get_symbol_entry()
+{
+	return *variable_symbol_entry;
+}
+
+void Name_Ast::print(ostream & file_buffer)
+{
+	file_buffer << "Name : " << variable_symbol_entry->get_variable_name();
+}
+
+void Name_Ast::print_value(Local_Environment & eval_env, ostream & file_buffer)
+{
+	string variable_name = variable_symbol_entry->get_variable_name();
+
+	Eval_Result * loc_var_val = eval_env.get_variable_value(variable_name);
+	Eval_Result * glob_var_val = interpreter_global_table.get_variable_value(variable_name);
+
+	file_buffer << "\n" << AST_SPACE << variable_name << " : ";
+
+	if (!eval_env.is_variable_defined(variable_name) && !interpreter_global_table.is_variable_defined(variable_name))
+		file_buffer << "undefined";
+
+	else if (eval_env.is_variable_defined(variable_name) && loc_var_val != NULL)
+	{
+		CHECK_INVARIANT(loc_var_val->get_result_enum() == int_result, "Result type can only be int");
+		file_buffer << loc_var_val->get_int_value() << "\n";
+	}
+
+	else
+	{
+		CHECK_INVARIANT(glob_var_val->get_result_enum() == int_result, 
+			"Result type can only be int and float");
+
+		if (glob_var_val == NULL)
+			file_buffer << "0\n";
+		else
+			file_buffer << glob_var_val->get_int_value() << "\n";
+	}
+	file_buffer << "\n";
+}
+
+Eval_Result & Name_Ast::get_value_of_evaluation(Local_Environment & eval_env)
+{
+	string variable_name = variable_symbol_entry->get_variable_name();
+
+	if (eval_env.does_variable_exist(variable_name))
+	{
+		CHECK_INPUT_AND_ABORT((eval_env.is_variable_defined(variable_name) == true), 
+					"Variable should be defined before its use", lineno);
+
+		Eval_Result * result = eval_env.get_variable_value(variable_name);
+		return *result;
+	}
+
+	CHECK_INPUT_AND_ABORT((interpreter_global_table.is_variable_defined(variable_name) == true), 
+				"Variable should be defined before its use", lineno);
+
+	Eval_Result * result = interpreter_global_table.get_variable_value(variable_name);
+	return *result;
+}
+
+void Name_Ast::set_value_of_evaluation(Local_Environment & eval_env, Eval_Result & result)
+{
+	Eval_Result * i;
+	string variable_name = variable_symbol_entry->get_variable_name();
+
+	if (variable_symbol_entry->get_data_type() == int_data_type)
+		i = new Eval_Result_Value_Int();
+	else
+		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
+
+	if (result.get_result_enum() == int_result)
+	 	i->set_value(result.get_int_value());
+	else
+		CHECK_INPUT_AND_ABORT(CONTROL_SHOULD_NOT_REACH, "Type of a name can be int/float only", lineno);
+
+	if (eval_env.does_variable_exist(variable_name))
+		eval_env.put_variable_value(*i, variable_name);
+	else
+		interpreter_global_table.put_variable_value(*i, variable_name);
+}
+
+Eval_Result & Name_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	return get_value_of_evaluation(eval_env);
+}
+
+Code_For_Ast & Name_Ast::compile()
+{
+	Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+
+	if (command_options.is_do_lra_selected() == false)
+		variable_symbol_entry->update_register(result_register);
+
+	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
+
+	Icode_Stmt * load_stmt = new Move_IC_Stmt(load, opd, register_opd);
+
+	
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(load_stmt);
+
+	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, result_register);
+
+	return load_code;
+}
+
+Code_For_Ast & Name_Ast::create_store_stmt(Register_Descriptor * store_register)
+{
+	CHECK_INVARIANT((store_register != NULL), "Store register cannot be null");
+
+	Ics_Opd * register_opd = new Register_Addr_Opd(store_register);
+	Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
+
+	Icode_Stmt * store_stmt = new Move_IC_Stmt(store, register_opd, opd);
+
+	if (command_options.is_do_lra_selected() == false)
+		variable_symbol_entry->free_register(store_register);
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+	ic_list.push_back(store_stmt);
+
+	Code_For_Ast & name_code = *new Code_For_Ast(ic_list, store_register);
+
+	return name_code;
+}
+
+Code_For_Ast & Name_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;;
+
+	bool load_needed = lra.is_load_needed();
+
+	Register_Descriptor * result_register = lra.get_register();
+
+	CHECK_INVARIANT((result_register != NULL), "Register cannot be null");
+	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
+
+	Icode_Stmt * load_stmt = NULL;
+	if (load_needed)
+	{
+		Ics_Opd * opd = new Mem_Addr_Opd(*variable_symbol_entry);
+
+		load_stmt = new Move_IC_Stmt(load, opd, register_opd);
+			
+		ic_list.push_back(load_stmt);
+	}
+
+	Code_For_Ast & load_code = *new Code_For_Ast(ic_list, result_register);
+
+	return load_code;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+template <class DATA_TYPE>
+Number_Ast<DATA_TYPE>::Number_Ast(DATA_TYPE number, Data_Type constant_data_type, int line)
+{
+	constant = number;
+	node_data_type = constant_data_type;
+
+	ast_num_child = zero_arity;
+
+	lineno = line;
+	type = "NUM";
+}
+
+template <class DATA_TYPE>
+Number_Ast<DATA_TYPE>::~Number_Ast()
+{}
+
+template <class DATA_TYPE>
+string Number_Ast<DATA_TYPE>::get_type()
+{
+	return type;
+}
+
+template <class DATA_TYPE>
+Data_Type Number_Ast<DATA_TYPE>::get_data_type()
+{
+	return node_data_type;
+}
+
+template <class DATA_TYPE>
+void Number_Ast<DATA_TYPE>::print(ostream & file_buffer)
+{
+	file_buffer << std::fixed;
+	file_buffer << std::setprecision(2);
+
+	file_buffer << "Num : " << constant;
+}
+
+template <class DATA_TYPE>
+Eval_Result & Number_Ast<DATA_TYPE>::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	if (node_data_type == int_data_type)
+	{
+		Eval_Result & result = *new Eval_Result_Value_Int();
+		result.set_value(constant);
+
+		return result;
+	}
+}
+
+template <class DATA_TYPE>
+Code_For_Ast & Number_Ast<DATA_TYPE>::compile()
+{
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+	CHECK_INVARIANT((result_register != NULL), "Result register cannot be null");
+	Ics_Opd * load_register = new Register_Addr_Opd(result_register);
+	Ics_Opd * opd = new Const_Opd<int>(constant);
+
+	Icode_Stmt * load_stmt = new Move_IC_Stmt(imm_load, opd, load_register);
+
+	Symbol_Table_Entry & res = *new Symbol_Table_Entry();
+	res.set_register(result_register);
+	result_register->update_symbol_information(res);
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+	ic_list.push_back(load_stmt);
+
+	Code_For_Ast & num_code = *new Code_For_Ast(ic_list, result_register);
+
+	return num_code;
+}
+
+template <class DATA_TYPE>
+Code_For_Ast & Number_Ast<DATA_TYPE>::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	CHECK_INVARIANT((lra.get_register() != NULL), "Register assigned through optimize_lra cannot be null");
+	Ics_Opd * load_register = new Register_Addr_Opd(lra.get_register());
+	Ics_Opd * opd = new Const_Opd<int>(constant);
+
+	Icode_Stmt * load_stmt = new Move_IC_Stmt(imm_load, opd, load_register);
+
+	list<Icode_Stmt *> ic_list;
+	ic_list.push_back(load_stmt);
+
+	Code_For_Ast & num_code = *new Code_For_Ast(ic_list, lra.get_register());
+
+	return num_code;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+Return_Ast::Return_Ast(int line)
+{
+	lineno = line;
+	node_data_type = void_data_type;
+	ast_num_child = zero_arity;
+	type = "RET";
+}
+
+Return_Ast::~Return_Ast()
+{}
+
+void Return_Ast::print(ostream & file_buffer)
+{
+	file_buffer << "\n" << AST_SPACE << "Return <NOTHING>\n";
+}
+
+Eval_Result & Return_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result = *new Eval_Result_Value_Int();
+	return result;
+}
+
+string Return_Ast::get_type()
+{
+	return type;
+}
+
+Code_For_Ast & Return_Ast::compile()
+{
+	Code_For_Ast & ret_code = *new Code_For_Ast();
+	return ret_code;
+}
+
+Code_For_Ast & Return_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	Code_For_Ast & ret_code = *new Code_For_Ast();
+	return ret_code;
+}
+
+template class Number_Ast<int>;
+
+////////////////////////////////////////////////////////
+
+Relational_Expr_Ast::Relational_Expr_Ast(Ast * arg_lhs, Ast * arg_rhs, relation_op arg_op, int line)
+{
+	lhs = arg_lhs;
+	rhs = arg_rhs;
+	op = arg_op;
+	type = "REL";
+	lineno = line;
+}
+
+Relational_Expr_Ast::~Relational_Expr_Ast()
+{
+	delete lhs;
+	delete rhs;
+}
+
+string Relational_Expr_Ast::get_type()
+{
+	return type;
+}
+
+Data_Type Relational_Expr_Ast::get_data_type()
+{
+	return node_data_type;
+}
+
+bool Relational_Expr_Ast::check_ast()
+{
+	CHECK_INVARIANT((rhs != NULL), "Rhs of Assignment_Ast cannot be null");
+	CHECK_INVARIANT((lhs != NULL), "Lhs of Assignment_Ast cannot be null");
+
+	if(lhs->get_data_type()==rhs->get_data_type())
+	{
+		node_data_type = lhs->get_data_type();
+		return true;
+	}
+	CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, 
+		"Assignment statement data type not compatible");
+
+}
+
+void Relational_Expr_Ast::print(ostream & file_buffer)
+{
+	file_buffer<<AST_NODE_SPACE<<"Condition: ";
+	if(op==LE)
+		file_buffer<<"LE\n";
+	else if(op==LT)
+		file_buffer<<"LT\n";
+	else if(op==GE)
+		file_buffer<<"GE\n";
+	else if(op==GT)
+		file_buffer<<"GT\n";
+	else if(op==NE)
+		file_buffer<<"NE\n";
+	else if(op==EQ)
+		file_buffer<<"EQ\n";
+	else
+		file_buffer<<"wrong\n";
+
+	file_buffer <<AST_SUB_NODE_SPACE"LHS (";
+	if(lhs->get_type()!="REL")
+		lhs->print(file_buffer);
+	else
+	{
+		file_buffer<<"\n";
+		lhs->print(file_buffer);
+	}
+	file_buffer << ")\n";
+
+	file_buffer <<AST_SUB_NODE_SPACE << "RHS (";
+	if(rhs->get_type()!="REL") rhs->print(file_buffer);
+	else
+	{
+		file_buffer<<"\n";
+		rhs->print(file_buffer);
+	}
+	file_buffer << ")";
+}
+
+Eval_Result & Relational_Expr_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	
+	Eval_Result & result_rhs = rhs->evaluate(eval_env, file_buffer);
+	if(result_rhs.is_variable_defined()==false)
+		// report_error("Variable should be defined to be on rhs", NOLINE);
+		CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Variable should be defined to be on rhs")
+
+	Eval_Result & result_lhs = lhs->evaluate(eval_env, file_buffer);
+	if(result_rhs.is_variable_defined()==false)
+		// report_error("Variable should be defined to be on rhs", NOLINE);
+		CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Variable should be defined to be on lhs")
+
+	Eval_Result & result = *new Eval_Result_Value_Int();
+
+	if(op==LE)
+	{
+		if(result_lhs.get_int_value()<=result_rhs.get_int_value())
+			result.set_value(1);
+		else
+			result.set_value(0);
+	}
+	else if(op==LT)
+	{
+		if(result_lhs.get_int_value()<result_rhs.get_int_value())
+			result.set_value(1);
+		else
+			result.set_value(0);
+	}
+	else if(op==GE)
+	{
+		if(result_lhs.get_int_value()>=result_rhs.get_int_value())
+			result.set_value(1);
+		else
+			result.set_value(0);
+	}
+	else if(op==GT)
+	{
+		if(result_lhs.get_int_value()>result_rhs.get_int_value())
+			result.set_value(1);
+		else
+			result.set_value(0);
+	}
+	else if(op==NE)
+	{
+		if(result_lhs.get_int_value()!=result_rhs.get_int_value())
+			result.set_value(1);
+		else
+			result.set_value(0);
+	}
+	else
+	{
+		if(result_lhs.get_int_value()==result_rhs.get_int_value())
+			result.set_value(1);
+		else
+			result.set_value(0);
+	}
+	return result;
+}
+
+Code_For_Ast & Relational_Expr_Ast::compile()
+{
+	CHECK_INVARIANT((lhs != NULL), "Lhs cannot be null");
+	CHECK_INVARIANT((rhs != NULL), "Rhs cannot be null");
+
+	Code_For_Ast & stmt_lhs = lhs->compile();
+	Code_For_Ast & stmt_rhs = rhs->compile();
+
+	Register_Descriptor * register_lhs = stmt_lhs.get_reg();
+	Register_Descriptor * register_rhs = stmt_rhs.get_reg();
+
+	Ics_Opd * register_opd_l = new Register_Addr_Opd(register_lhs);
+	Ics_Opd * register_opd_r = new Register_Addr_Opd(register_rhs);
+
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+
+	register_lhs->clear_lra_symbol_list();
+	register_rhs->clear_lra_symbol_list();
+
+	Symbol_Table_Entry & res = *new Symbol_Table_Entry();
+	res.set_register(result_register);
+	result_register->update_symbol_information(res);
+
+	CHECK_INVARIANT((result_register != NULL), "Result register cannot be null");
+	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
+	
+	Icode_Stmt * rel_stmt;
+
+	if(op==GT)
+		rel_stmt = new Relational_IC_Stmt(sgt, register_opd_l , register_opd_r , register_opd);
+	else if(op==LT)
+		rel_stmt = new Relational_IC_Stmt(slt, register_opd_l , register_opd_r , register_opd);
+	else if(op==GE)
+		rel_stmt = new Relational_IC_Stmt(sge, register_opd_l , register_opd_r , register_opd);
+	else if(op==LE)
+		rel_stmt = new Relational_IC_Stmt(sle, register_opd_l , register_opd_r , register_opd);
+	else if(op==NE)
+		rel_stmt = new Relational_IC_Stmt(sne, register_opd_l , register_opd_r , register_opd);
+	else if(op==EQ)
+		rel_stmt = new Relational_IC_Stmt(seq, register_opd_l , register_opd_r , register_opd);
+	else
+		CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Invalid operation");
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (stmt_lhs.get_icode_list().empty() == false)
+		ic_list = stmt_lhs.get_icode_list();
+
+	if (stmt_rhs.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), stmt_rhs.get_icode_list());
+
+	ic_list.push_back(rel_stmt);
+
+	Code_For_Ast * relational_expr;
+	if (ic_list.empty() == false)
+		relational_expr = new Code_For_Ast(ic_list, result_register);
+
+	return *relational_expr;
+
+}
+
+Code_For_Ast & Relational_Expr_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	CHECK_INVARIANT((lhs != NULL), "Lhs cannot be null");
+	CHECK_INVARIANT((rhs != NULL), "Rhs cannot be null");
+
+	// Lra_Outcome & lra1 = lra;
+
+	if(check(lhs)){
+		lra.optimize_lra(mc_2r, NULL, lhs);
+	}
+
+	bool lhs_source = lra.is_source_register();
+
+	Code_For_Ast & stmt_lhs = lhs->compile_and_optimize_ast(lra);
+
+
+	if(check(rhs)){
+		lra.optimize_lra(mc_2r, NULL, rhs);
+	}
+
+	bool rhs_source = lra.is_source_register();
+	Code_For_Ast & stmt_rhs = rhs->compile_and_optimize_ast(lra);
+
+	Register_Descriptor * register_lhs = stmt_lhs.get_reg();
+	Register_Descriptor * register_rhs = stmt_rhs.get_reg();
+
+	Ics_Opd * register_opd_l = new Register_Addr_Opd(register_lhs);
+	Ics_Opd * register_opd_r = new Register_Addr_Opd(register_rhs);
+
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+
+	if(typeid(*lhs)==typeid(Number_Ast<int>) || typeid(*lhs)==typeid(Relational_Expr_Ast))
+	{
+		register_lhs->clear_lra_symbol_list();
+	}
+	else if(lhs_source==false)
+	{
+		// register_lhs->remove_symbol_entry_from_list(lhs->get_symbol_entry());
+		// lhs->get_symbol_entry
+		register_lhs->clear_lra_symbol_list();
+	}
+	
+
+	if(typeid(*rhs)==typeid(Number_Ast<int>) || typeid(*rhs)==typeid(Relational_Expr_Ast))
+	{
+		register_rhs->clear_lra_symbol_list();
+	}
+	else if(rhs_source==false)
+	{
+		// (rhs->get_symbol_entry()).free_register(register_rhs);
+		// register_rhs->remove_symbol_entry_from_list(rhs->get_symbol_entry());
+		register_rhs->clear_lra_symbol_list();
+	}
+
+	// register_lhs->clear_lra_symbol_list();
+	// register_rhs->clear_lra_symbol_list();
+
+	Symbol_Table_Entry & res = *new Symbol_Table_Entry();
+	res.set_register(result_register);
+	result_register->update_symbol_information(res);
+
+	CHECK_INVARIANT((result_register != NULL), "Result register cannot be null");
+	Ics_Opd * register_opd = new Register_Addr_Opd(result_register);
+
+	// result_register->clear_lra_symbol_list(); // MY ADDITION	
+	
+	Icode_Stmt * rel_stmt;
+
+	if(op==GT)
+		rel_stmt = new Relational_IC_Stmt(sgt, register_opd_l , register_opd_r , register_opd);
+	else if(op==LT)
+		rel_stmt = new Relational_IC_Stmt(slt, register_opd_l , register_opd_r , register_opd);
+	else if(op==GE)
+		rel_stmt = new Relational_IC_Stmt(sge, register_opd_l , register_opd_r , register_opd);
+	else if(op==LE)
+		rel_stmt = new Relational_IC_Stmt(sle, register_opd_l , register_opd_r , register_opd);
+	else if(op==NE)
+		rel_stmt = new Relational_IC_Stmt(sne, register_opd_l , register_opd_r , register_opd);
+	else if(op==EQ)
+		rel_stmt = new Relational_IC_Stmt(seq, register_opd_l , register_opd_r , register_opd);
+	else
+		CHECK_INVARIANT(CONTROL_SHOULD_NOT_REACH, "Invalid operation");
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (stmt_lhs.get_icode_list().empty() == false)
+		ic_list = stmt_lhs.get_icode_list();
+
+	if (stmt_rhs.get_icode_list().empty() == false)
+		ic_list.splice(ic_list.end(), stmt_rhs.get_icode_list());
+
+	ic_list.push_back(rel_stmt);
+
+	Code_For_Ast * relational_expr;
+	if (ic_list.empty() == false)
+		relational_expr = new Code_For_Ast(ic_list, result_register);
+
+	return *relational_expr;
+}
+
+////////////////////////////////////////////////////////////
+
+Goto_Ast::Goto_Ast(int arg_successor, int line)
+{
+	successor = arg_successor;
+	type = "GOTO";
+	lineno = line;
+}
+
+Goto_Ast::~Goto_Ast()
+{
+
+}
+
+string Goto_Ast::get_type()
+{
+	return type;
+}
+
+void Goto_Ast::print(ostream & file_buffer)
+{
+	file_buffer<<AST_SPACE<<"Goto statement:\n";
+	file_buffer<<AST_NODE_SPACE"Successor: "<<successor<<"\n";
+}
+
+Eval_Result & Goto_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result = *new Eval_Result_BB();
+	result.set_value(successor);
+	print(file_buffer);
+	file_buffer<<AST_SPACE<<"GOTO (BB "<<successor<<")\n";
+	return result;
+}
+
+Code_For_Ast & Goto_Ast::compile()
+{
+	stringstream ss;
+	ss << successor;
+	string label;
+	label = "label"+ss.str();
+
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+
+	Icode_Stmt * jump_stmt = new Jump_IC_Stmt(j, label); //Jump operation
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+	ic_list.push_back(jump_stmt);
+
+	Code_For_Ast * jump_expr;
+	if(ic_list.empty()==false)
+	{
+		jump_expr = new Code_For_Ast(ic_list, result_register);
+	}
+
+	return *jump_expr;
+}
+
+Code_For_Ast & Goto_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	stringstream ss;
+	ss << successor;
+	string label;
+	label = "label"+ss.str();
+
+	Register_Descriptor * result_register = machine_dscr_object.get_new_register();
+
+	Icode_Stmt * jump_stmt = new Jump_IC_Stmt(j, label); //Jump operation
+
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+	ic_list.push_back(jump_stmt);
+
+	Code_For_Ast * jump_expr;
+	if(ic_list.empty()==false)
+	{
+		jump_expr = new Code_For_Ast(ic_list, result_register);
+	}
+
+	return *jump_expr;
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+If_Else_Ast::If_Else_Ast(Ast * arg_condition, int arg_true_successor, int arg_false_successor, int line)
+{
+	condition = arg_condition;
+	true_successor = arg_true_successor;
+	false_successor = arg_false_successor;
+	type="IF";
+	lineno = line;
+}
+
+If_Else_Ast::~If_Else_Ast()
+{
+	delete condition;
+}
+
+string If_Else_Ast::get_type()
+{
+	return type;
+}
+
+void If_Else_Ast::print(ostream & file_buffer)
+{
+	file_buffer<<AST_SPACE<<"If_Else statement:\n";
+	// file_buffer<<AST_NODE_SPACE;
+	condition->print(file_buffer);
+	file_buffer<<"\n";
+	file_buffer<<AST_NODE_SPACE"True Successor: ";
+	file_buffer<<true_successor<<"\n";
+	file_buffer<<AST_NODE_SPACE"False Successor: ";
+	file_buffer<<false_successor<<"\n";
+}
+
+Eval_Result & If_Else_Ast::evaluate(Local_Environment & eval_env, ostream & file_buffer)
+{
+	Eval_Result & result = *new Eval_Result_BB();
+	Eval_Result & result_condition = condition->evaluate(eval_env, file_buffer);
+	bool predicate;
+	if(result_condition.get_int_value()==1){
+		result.set_value(true_successor);
+		predicate = true;
+	}
+	else{
+		result.set_value(false_successor);
+		predicate = false;
+	}
+
+	print(file_buffer);
+	file_buffer<<AST_SPACE<<"Condition ";
+	if(predicate)
+		file_buffer<<"True : Goto (BB "<<true_successor<<")\n";
+	else
+		file_buffer<<"False : Goto (BB "<<false_successor<<")\n";
+
+	return result;
+}
+
+bool If_Else_Ast::check_ast()
+{
+	return condition->check_ast();
+}
+
+Code_For_Ast & If_Else_Ast::compile()
+{
+	CHECK_INVARIANT((condition != NULL), "Condition cannot be null");
+	
+	Code_For_Ast & load_stmt = condition->compile();
+	
+	Register_Descriptor * load_register = load_stmt.get_reg();
+	
+	Ics_Opd * register_opd = new Register_Addr_Opd(load_register);
+	Ics_Opd * zero_opd = new Register_Addr_Opd(machine_dscr_object.spim_register_table[zero]);
+
+	stringstream ss_f;
+    ss_f << false_successor;
+	string label_f = "label" + ss_f.str();
+	stringstream ss_t;
+    ss_t << true_successor;
+	string label_t = "label" + ss_t.str();
+
+	Icode_Stmt * cond_stmt_branch = new Branch_IC_Stmt(bne, register_opd , zero_opd , label_t);
+	Icode_Stmt * cond_stmt_Jump = new Jump_IC_Stmt(j, label_f);
+	
+	load_register->clear_lra_symbol_list();
+	
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (load_stmt.get_icode_list().empty() == false)
+		ic_list = load_stmt.get_icode_list();
+
+	ic_list.push_back(cond_stmt_branch);
+	ic_list.push_back(cond_stmt_Jump);
+
+	Code_For_Ast * if_else_stmt;
+	if (ic_list.empty() == false)
+		if_else_stmt = new Code_For_Ast(ic_list, load_register);
+
+	return *if_else_stmt;
+}
+
+Code_For_Ast & If_Else_Ast::compile_and_optimize_ast(Lra_Outcome & lra)
+{
+	CHECK_INVARIANT((condition != NULL), "Condition cannot be null");
+
+	if(check(condition))
+		lra.optimize_lra(mc_2r, NULL, condition);
+	
+	bool condition_source = lra.is_source_register();
+
+	Code_For_Ast & load_stmt = condition->compile_and_optimize_ast(lra);
+	
+	Register_Descriptor * load_register = load_stmt.get_reg();
+	
+	Ics_Opd * register_opd = new Register_Addr_Opd(load_register);
+	Ics_Opd * zero_opd = new Register_Addr_Opd(machine_dscr_object.spim_register_table[zero]);
+
+	if(typeid(*condition)==typeid(Number_Ast<int>) || typeid(*condition)==typeid(Relational_Expr_Ast))
+	{
+		load_register->clear_lra_symbol_list();
+	}
+	else if(condition_source==false)
+	{
+		// (condition->get_symbol_entry()).free_register(load_register);
+		load_register->clear_lra_symbol_list();
+	}
+
+	stringstream ss_f;
+    ss_f << false_successor;
+	string label_f = "label" + ss_f.str();
+	stringstream ss_t;
+    ss_t << true_successor;
+	string label_t = "label" + ss_t.str();
+
+	Icode_Stmt * cond_stmt_branch = new Branch_IC_Stmt(bne, register_opd , zero_opd , label_t);
+	Icode_Stmt * cond_stmt_Jump = new Jump_IC_Stmt(j, label_f);
+	
+	// load_register->clear_lra_symbol_list();
+	
+	list<Icode_Stmt *> & ic_list = *new list<Icode_Stmt *>;
+
+	if (load_stmt.get_icode_list().empty() == false)
+		ic_list = load_stmt.get_icode_list();
+
+	ic_list.push_back(cond_stmt_branch);
+	ic_list.push_back(cond_stmt_Jump);
+
+	Code_For_Ast * if_else_stmt;
+	if (ic_list.empty() == false)
+		if_else_stmt = new Code_For_Ast(ic_list, load_register);
+
+	return *if_else_stmt;
+}

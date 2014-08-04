@@ -1,0 +1,607 @@
+
+Production Rules
+(rule precedences determined from %prec or 1st terminal between parentheses):
+1: program ->  optional_declaration_list procedure_definition
+2: optional_declaration_list ->  <empty>
+3: optional_declaration_list ->  variable_declaration_list
+4: procedure_definition (NAME) ->  NAME '(' ')' #0001 '{' optional_variable_declaration_list #0002 basic_block_list '}'
+5: #0001 ->  <empty>
+6: #0002 ->  <empty>
+7: optional_variable_declaration_list ->  <empty>
+8: optional_variable_declaration_list ->  variable_declaration_list
+9: variable_declaration_list ->  variable_declaration
+10: variable_declaration_list ->  variable_declaration_list variable_declaration
+11: variable_declaration (';') ->  declaration ';'
+12: declaration (INTEGER) ->  INTEGER NAME
+13: basic_block_list ->  basic_block_list basic_block
+14: basic_block_list ->  basic_block
+15: basic_block (BBNUM) ->  BBNUM ':' executable_statement_list
+16: executable_statement_list ->  assignment_statement_list
+17: executable_statement_list (RETURN) ->  assignment_statement_list RETURN ';'
+18: executable_statement_list ->  assignment_statement_list if_expression
+19: executable_statement_list ->  assignment_statement_list goto_expression
+20: assignment_statement_list ->  <empty>
+21: assignment_statement_list ->  assignment_statement_list assignment_statement
+22: assignment_statement (ASSIGN) ->  variable ASSIGN comparision_expression ';'
+23: variable (NAME) ->  NAME
+24: constant (INTEGER_NUMBER) ->  INTEGER_NUMBER
+25: goto_expression (GOTO) ->  GOTO BBNUM ';'
+26: if_expression (IF) ->  IF '(' comparision_expression ')' GOTO BBNUM ';' ELSE GOTO BBNUM ';'
+27: comparision_expression (LEP) ->  comparision_expression LEP comparision_expression
+28: comparision_expression (LTP) ->  comparision_expression LTP comparision_expression
+29: comparision_expression (GEP) ->  comparision_expression GEP comparision_expression
+30: comparision_expression (GTP) ->  comparision_expression GTP comparision_expression
+31: comparision_expression (NEP) ->  comparision_expression NEP comparision_expression
+32: comparision_expression (EQP) ->  comparision_expression EQP comparision_expression
+33: comparision_expression ->  variable
+34: comparision_expression ->  constant
+35: comparision_expression ('(') ->  '(' comparision_expression ')'
+36: program_$ ->  program
+
+
+Symbolic Terminal tokens:
+       error
+       EOF
+   257: INTEGER_NUMBER
+   258: BBNUM
+   259: NAME
+   260: RETURN
+   261: INTEGER
+   262: IF
+   263: ELSE
+   264: GOTO
+   265: ASSIGN
+   266: NEP
+   267: EQP
+   268: LTP
+   269: LEP
+   270: GTP
+   271: GEP
+    40: '('
+    41: ')'
+   123: '{'
+   125: '}'
+    59: ';'
+    58: ':'
+
+
+Grammar States: 
+State 0:
+36: program_$ ->  . program 
+  0:   On program to state 1
+  1:   On optional_declaration_list to state 2
+  2:   On variable_declaration_list to state 3
+  3:   On variable_declaration to state 4
+  4:   On declaration to state 5
+  5:   On INTEGER to state 6
+  Reduce by 2: optional_declaration_list ->  . 
+
+
+State 1:
+36: program_$ -> program  . 
+
+
+State 2:
+1: program -> optional_declaration_list  . procedure_definition 
+  0:   On procedure_definition to state 7
+  1:   On NAME to state 8
+
+
+State 3:
+3: optional_declaration_list -> variable_declaration_list  . 
+10: variable_declaration_list -> variable_declaration_list  . variable_declaration 
+  0:   On variable_declaration to state 9
+  1:   On declaration to state 5
+  2:   On INTEGER to state 6
+  Reduce by 3: optional_declaration_list -> variable_declaration_list  . 
+
+
+State 4:
+9: variable_declaration_list -> variable_declaration  . 
+  Reduce by 9: variable_declaration_list -> variable_declaration  . 
+
+
+State 5:
+11: variable_declaration -> declaration  . ';' 
+  0:   On ';' to state 10
+
+
+State 6:
+12: declaration -> INTEGER  . NAME 
+  0:   On NAME to state 11
+
+
+State 7:
+1: program -> optional_declaration_list procedure_definition  . 
+  Reduce by 1: program -> optional_declaration_list procedure_definition  . 
+
+
+State 8:
+4: procedure_definition -> NAME  . '(' ')' #0001 '{' optional_variable_declaration_list #0002 basic_block_list '}' 
+  0:   On '(' to state 12
+
+
+State 9:
+10: variable_declaration_list -> variable_declaration_list variable_declaration  . 
+  Reduce by 10: variable_declaration_list -> variable_declaration_list variable_declaration  . 
+
+
+State 10:
+11: variable_declaration -> declaration ';'  . 
+  Reduce by 11: variable_declaration -> declaration ';'  . 
+
+
+State 11:
+12: declaration -> INTEGER NAME  . 
+  Reduce by 12: declaration -> INTEGER NAME  . 
+
+
+State 12:
+4: procedure_definition -> NAME '('  . ')' #0001 '{' optional_variable_declaration_list #0002 basic_block_list '}' 
+  0:   On ')' to state 13
+
+
+State 13:
+4: procedure_definition -> NAME '(' ')'  . #0001 '{' optional_variable_declaration_list #0002 basic_block_list '}' 
+  0:   On #0001 to state 14
+  Reduce by 5: #0001 ->  . 
+
+
+State 14:
+4: procedure_definition -> NAME '(' ')' #0001  . '{' optional_variable_declaration_list #0002 basic_block_list '}' 
+  0:   On '{' to state 15
+
+
+State 15:
+4: procedure_definition -> NAME '(' ')' #0001 '{'  . optional_variable_declaration_list #0002 basic_block_list '}' 
+  0:   On optional_variable_declaration_list to state 16
+  1:   On variable_declaration_list to state 17
+  2:   On variable_declaration to state 4
+  3:   On declaration to state 5
+  4:   On INTEGER to state 6
+  Reduce by 7: optional_variable_declaration_list ->  . 
+
+
+State 16:
+4: procedure_definition -> NAME '(' ')' #0001 '{' optional_variable_declaration_list  . #0002 basic_block_list '}' 
+  0:   On #0002 to state 18
+  Reduce by 6: #0002 ->  . 
+
+
+State 17:
+8: optional_variable_declaration_list -> variable_declaration_list  . 
+10: variable_declaration_list -> variable_declaration_list  . variable_declaration 
+  0:   On variable_declaration to state 9
+  1:   On declaration to state 5
+  2:   On INTEGER to state 6
+  Reduce by 8: optional_variable_declaration_list -> variable_declaration_list  . 
+
+
+State 18:
+4: procedure_definition -> NAME '(' ')' #0001 '{' optional_variable_declaration_list #0002  . basic_block_list '}' 
+  0:   On basic_block_list to state 19
+  1:   On basic_block to state 20
+  2:   On BBNUM to state 21
+
+
+State 19:
+4: procedure_definition -> NAME '(' ')' #0001 '{' optional_variable_declaration_list #0002 basic_block_list  . '}' 
+13: basic_block_list -> basic_block_list  . basic_block 
+  0:   On '}' to state 22
+  1:   On basic_block to state 23
+  2:   On BBNUM to state 21
+
+
+State 20:
+14: basic_block_list -> basic_block  . 
+  Reduce by 14: basic_block_list -> basic_block  . 
+
+
+State 21:
+15: basic_block -> BBNUM  . ':' executable_statement_list 
+  0:   On ':' to state 24
+
+
+State 22:
+4: procedure_definition -> NAME '(' ')' #0001 '{' optional_variable_declaration_list #0002 basic_block_list '}'  . 
+  Reduce by 4: procedure_definition -> NAME '(' ')' #0001 '{' optional_variable_declaration_list #0002 basic_block_list '}'  . 
+
+
+State 23:
+13: basic_block_list -> basic_block_list basic_block  . 
+  Reduce by 13: basic_block_list -> basic_block_list basic_block  . 
+
+
+State 24:
+15: basic_block -> BBNUM ':'  . executable_statement_list 
+  0:   On executable_statement_list to state 25
+  1:   On assignment_statement_list to state 26
+  Reduce by 20: assignment_statement_list ->  . 
+
+
+State 25:
+15: basic_block -> BBNUM ':' executable_statement_list  . 
+  Reduce by 15: basic_block -> BBNUM ':' executable_statement_list  . 
+
+
+State 26:
+16: executable_statement_list -> assignment_statement_list  . 
+17: executable_statement_list -> assignment_statement_list  . RETURN ';' 
+18: executable_statement_list -> assignment_statement_list  . if_expression 
+19: executable_statement_list -> assignment_statement_list  . goto_expression 
+21: assignment_statement_list -> assignment_statement_list  . assignment_statement 
+  0:   On RETURN to state 27
+  1:   On if_expression to state 28
+  2:   On goto_expression to state 29
+  3:   On assignment_statement to state 30
+  4:   On IF to state 31
+  5:   On GOTO to state 32
+  6:   On variable to state 33
+  7:   On NAME to state 34
+  Reduce by 16: executable_statement_list -> assignment_statement_list  . 
+
+
+State 27:
+17: executable_statement_list -> assignment_statement_list RETURN  . ';' 
+  0:   On ';' to state 35
+
+
+State 28:
+18: executable_statement_list -> assignment_statement_list if_expression  . 
+  Reduce by 18: executable_statement_list -> assignment_statement_list if_expression  . 
+
+
+State 29:
+19: executable_statement_list -> assignment_statement_list goto_expression  . 
+  Reduce by 19: executable_statement_list -> assignment_statement_list goto_expression  . 
+
+
+State 30:
+21: assignment_statement_list -> assignment_statement_list assignment_statement  . 
+  Reduce by 21: assignment_statement_list -> assignment_statement_list assignment_statement  . 
+
+
+State 31:
+26: if_expression -> IF  . '(' comparision_expression ')' GOTO BBNUM ';' ELSE GOTO BBNUM ';' 
+  0:   On '(' to state 36
+
+
+State 32:
+25: goto_expression -> GOTO  . BBNUM ';' 
+  0:   On BBNUM to state 37
+
+
+State 33:
+22: assignment_statement -> variable  . ASSIGN comparision_expression ';' 
+  0:   On ASSIGN to state 38
+
+
+State 34:
+23: variable -> NAME  . 
+  Reduce by 23: variable -> NAME  . 
+
+
+State 35:
+17: executable_statement_list -> assignment_statement_list RETURN ';'  . 
+  Reduce by 17: executable_statement_list -> assignment_statement_list RETURN ';'  . 
+
+
+State 36:
+26: if_expression -> IF '('  . comparision_expression ')' GOTO BBNUM ';' ELSE GOTO BBNUM ';' 
+  0:   On comparision_expression to state 39
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 37:
+25: goto_expression -> GOTO BBNUM  . ';' 
+  0:   On ';' to state 44
+
+
+State 38:
+22: assignment_statement -> variable ASSIGN  . comparision_expression ';' 
+  0:   On comparision_expression to state 45
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 39:
+26: if_expression -> IF '(' comparision_expression  . ')' GOTO BBNUM ';' ELSE GOTO BBNUM ';' 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0:   On ')' to state 46
+  1:   On LEP to state 47
+  2:   On LTP to state 48
+  3:   On GEP to state 49
+  4:   On GTP to state 50
+  5:   On NEP to state 51
+  6:   On EQP to state 52
+
+
+State 40:
+33: comparision_expression -> variable  . 
+  Reduce by 33: comparision_expression -> variable  . 
+
+
+State 41:
+34: comparision_expression -> constant  . 
+  Reduce by 34: comparision_expression -> constant  . 
+
+
+State 42:
+35: comparision_expression -> '('  . comparision_expression ')' 
+  0:   On comparision_expression to state 53
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 43:
+24: constant -> INTEGER_NUMBER  . 
+  Reduce by 24: constant -> INTEGER_NUMBER  . 
+
+
+State 44:
+25: goto_expression -> GOTO BBNUM ';'  . 
+  Reduce by 25: goto_expression -> GOTO BBNUM ';'  . 
+
+
+State 45:
+22: assignment_statement -> variable ASSIGN comparision_expression  . ';' 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0:   On ';' to state 54
+  1:   On LEP to state 47
+  2:   On LTP to state 48
+  3:   On GEP to state 49
+  4:   On GTP to state 50
+  5:   On NEP to state 51
+  6:   On EQP to state 52
+
+
+State 46:
+26: if_expression -> IF '(' comparision_expression ')'  . GOTO BBNUM ';' ELSE GOTO BBNUM ';' 
+  0:   On GOTO to state 55
+
+
+State 47:
+27: comparision_expression -> comparision_expression LEP  . comparision_expression 
+  0:   On comparision_expression to state 56
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 48:
+28: comparision_expression -> comparision_expression LTP  . comparision_expression 
+  0:   On comparision_expression to state 57
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 49:
+29: comparision_expression -> comparision_expression GEP  . comparision_expression 
+  0:   On comparision_expression to state 58
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 50:
+30: comparision_expression -> comparision_expression GTP  . comparision_expression 
+  0:   On comparision_expression to state 59
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 51:
+31: comparision_expression -> comparision_expression NEP  . comparision_expression 
+  0:   On comparision_expression to state 60
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 52:
+32: comparision_expression -> comparision_expression EQP  . comparision_expression 
+  0:   On comparision_expression to state 61
+  1:   On variable to state 40
+  2:   On constant to state 41
+  3:   On '(' to state 42
+  4:   On NAME to state 34
+  5:   On INTEGER_NUMBER to state 43
+
+
+State 53:
+35: comparision_expression -> '(' comparision_expression  . ')' 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0:   On ')' to state 62
+  1:   On LEP to state 47
+  2:   On LTP to state 48
+  3:   On GEP to state 49
+  4:   On GTP to state 50
+  5:   On NEP to state 51
+  6:   On EQP to state 52
+
+
+State 54:
+22: assignment_statement -> variable ASSIGN comparision_expression ';'  . 
+  Reduce by 22: assignment_statement -> variable ASSIGN comparision_expression ';'  . 
+
+
+State 55:
+26: if_expression -> IF '(' comparision_expression ')' GOTO  . BBNUM ';' ELSE GOTO BBNUM ';' 
+  0:   On BBNUM to state 63
+
+
+State 56:
+27: comparision_expression -> comparision_expression LEP comparision_expression  . 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0 (removed by precedence):   On LEP to state 47
+  1 (removed by precedence):   On LTP to state 48
+  2 (removed by precedence):   On GEP to state 49
+  3 (removed by precedence):   On GTP to state 50
+  4 (removed by precedence):   On NEP to state 51
+  5 (removed by precedence):   On EQP to state 52
+  Reduce by 27: comparision_expression -> comparision_expression LEP comparision_expression  . 
+
+
+State 57:
+28: comparision_expression -> comparision_expression LTP comparision_expression  . 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0 (removed by precedence):   On LEP to state 47
+  1 (removed by precedence):   On LTP to state 48
+  2 (removed by precedence):   On GEP to state 49
+  3 (removed by precedence):   On GTP to state 50
+  4 (removed by precedence):   On NEP to state 51
+  5 (removed by precedence):   On EQP to state 52
+  Reduce by 28: comparision_expression -> comparision_expression LTP comparision_expression  . 
+
+
+State 58:
+29: comparision_expression -> comparision_expression GEP comparision_expression  . 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0 (removed by precedence):   On LEP to state 47
+  1 (removed by precedence):   On LTP to state 48
+  2 (removed by precedence):   On GEP to state 49
+  3 (removed by precedence):   On GTP to state 50
+  4 (removed by precedence):   On NEP to state 51
+  5 (removed by precedence):   On EQP to state 52
+  Reduce by 29: comparision_expression -> comparision_expression GEP comparision_expression  . 
+
+
+State 59:
+30: comparision_expression -> comparision_expression GTP comparision_expression  . 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0 (removed by precedence):   On LEP to state 47
+  1 (removed by precedence):   On LTP to state 48
+  2 (removed by precedence):   On GEP to state 49
+  3 (removed by precedence):   On GTP to state 50
+  4 (removed by precedence):   On NEP to state 51
+  5 (removed by precedence):   On EQP to state 52
+  Reduce by 30: comparision_expression -> comparision_expression GTP comparision_expression  . 
+
+
+State 60:
+31: comparision_expression -> comparision_expression NEP comparision_expression  . 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0:   On LEP to state 47
+  1:   On LTP to state 48
+  2:   On GEP to state 49
+  3:   On GTP to state 50
+  4 (removed by precedence):   On NEP to state 51
+  5 (removed by precedence):   On EQP to state 52
+  Reduce by 31: comparision_expression -> comparision_expression NEP comparision_expression  . 
+
+
+State 61:
+32: comparision_expression -> comparision_expression EQP comparision_expression  . 
+27: comparision_expression -> comparision_expression  . LEP comparision_expression 
+28: comparision_expression -> comparision_expression  . LTP comparision_expression 
+29: comparision_expression -> comparision_expression  . GEP comparision_expression 
+30: comparision_expression -> comparision_expression  . GTP comparision_expression 
+31: comparision_expression -> comparision_expression  . NEP comparision_expression 
+32: comparision_expression -> comparision_expression  . EQP comparision_expression 
+  0:   On LEP to state 47
+  1:   On LTP to state 48
+  2:   On GEP to state 49
+  3:   On GTP to state 50
+  4 (removed by precedence):   On NEP to state 51
+  5 (removed by precedence):   On EQP to state 52
+  Reduce by 32: comparision_expression -> comparision_expression EQP comparision_expression  . 
+
+
+State 62:
+35: comparision_expression -> '(' comparision_expression ')'  . 
+  Reduce by 35: comparision_expression -> '(' comparision_expression ')'  . 
+
+
+State 63:
+26: if_expression -> IF '(' comparision_expression ')' GOTO BBNUM  . ';' ELSE GOTO BBNUM ';' 
+  0:   On ';' to state 64
+
+
+State 64:
+26: if_expression -> IF '(' comparision_expression ')' GOTO BBNUM ';'  . ELSE GOTO BBNUM ';' 
+  0:   On ELSE to state 65
+
+
+State 65:
+26: if_expression -> IF '(' comparision_expression ')' GOTO BBNUM ';' ELSE  . GOTO BBNUM ';' 
+  0:   On GOTO to state 66
+
+
+State 66:
+26: if_expression -> IF '(' comparision_expression ')' GOTO BBNUM ';' ELSE GOTO  . BBNUM ';' 
+  0:   On BBNUM to state 67
+
+
+State 67:
+26: if_expression -> IF '(' comparision_expression ')' GOTO BBNUM ';' ELSE GOTO BBNUM  . ';' 
+  0:   On ';' to state 68
+
+
+State 68:
+26: if_expression -> IF '(' comparision_expression ')' GOTO BBNUM ';' ELSE GOTO BBNUM ';'  . 
+  Reduce by 26: if_expression -> IF '(' comparision_expression ')' GOTO BBNUM ';' ELSE GOTO BBNUM ';'  . 
+
+
+
